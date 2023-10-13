@@ -17,6 +17,7 @@
     "chai": "^4.1.1",
     "cors": "^2.8.5",
     "cross-env": "^5.1.1",
+    "errorhandler": "^1.5.1",
     "express": "^4.15.4",
     "mocha": "^10.2.0",
     "morgan": "^1.8.2",

@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const errorhandler = require('errorhandler');
 
 
 module.exports = app;
@@ -19,7 +20,14 @@ app.use(bodyParser.json());
 
 // Mount your existing apiRouter below at the '/api' path.
 const apiRouter = require('./server/api');
-apiRouter.use()
+app.use('/api', apiRouter);
+
+
+//Error handler
+app.use((err, req, res, next) => {
+  const status = err.status || 500;
+  res.status(status).send(err.message);
+})
 
 // This conditional is here for testing purposes:
 if (!module.parent) { 
