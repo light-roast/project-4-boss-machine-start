@@ -77,6 +77,6 @@ minionsRouter.delete('/:minionId', (req, res, next)=> {
         res.status(500);
       }
       res.send();
-})
+});
 
 module.exports = minionsRouter;
