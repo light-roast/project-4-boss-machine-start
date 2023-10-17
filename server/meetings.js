@@ -4,30 +4,22 @@ const db = require('./db');
 const {
   getAllFromDatabase,
   createMeeting,
-  deleteAllFromDatabase
+  deleteAllFromDatabase,
+  addToDatabase
 } = db;
 
-const getmeetings = (req, res, next) => {
-  const meetings = getAllFromDatabase('meetings');
-  res.status(200).send(meetings);
-};
-
-meetingsRouter.get('/', getmeetings);
+meetingsRouter.get('/', (req, res, next) => {
+    res.send(getAllFromDatabase('meetings'));
+  });
 
 meetingsRouter.post('/', (req, res, next) => {
-    const meeting = createMeeting();
-    res.status(201).send(meeting);
+    let newMeeting = addToDatabase('meetings', createMeeting());
+    res.status(201).send(newMeeting);
 });
 
 meetingsRouter.delete('/', (req, res, next) =>{
-    const deleted = deleteAllFromDatabase('meetings');
-  if (deleted) {
-    res.status(204).send(deleted);
-  } else {
-    const error = new Error(`Failed to delete all meetings`);
-    error.status = 500;
-    return next(error);
-  }
+    deleteAllFromDatabase('meetings');
+    res.status(204).send();
 });
 
 module.exports = meetingsRouter;

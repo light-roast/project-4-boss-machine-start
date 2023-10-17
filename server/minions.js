@@ -1,86 +1,85 @@
-const express = require('express');
-const minionsRouter = express.Router();
-const db = require('./db');
-const {
+const minionsRouter = require('express').Router();
+
+module.exports = minionsRouter;
+
+const { 
+  addToDatabase,
   getAllFromDatabase,
   getFromDatabaseById,
-  addToDatabase,
   updateInstanceInDatabase,
-  deleteFromDatabaseById,
-} = db;
+  deleteFromDatabasebyId,
+} = require('./db');
 
-// Set a function to retrieve all minions from the DB
-const getMinions = (req, res, next) => {
-  const minions = getAllFromDatabase('minions');
-  res.send(minions);
-};
-
-// Middleware to get all minions from the DB
-minionsRouter.get('/', getMinions);
-
-// Use .param to validate and add the correct req.minion if it exists in the DB
-minionsRouter.param('minionId', (req, res, next, minionId) => {
-  const id = Number(minionId);
-  if (isNaN(id)) {
-    const error = new Error('ID must be a number');
-    error.status = 400;
-    return next(error);
-  }
-
-  try {
-    const found = getFromDatabaseById('minions', id);
-    if (found !== null) {
-      req.minion = found;
-      next();
-    } else {
-      const error = new Error(`Minion with this id (${id}) is not in the database`);
-      error.status = 404;
-      return next(error);
-    }
-  } catch (err) {
-    return next(err);
+minionsRouter.param('minionId', (req, res, next, id) => {
+  const minion = getFromDatabaseById('minions', id);
+  if (minion) {
+    req.minion = minion;
+    next();
+  } else {
+    res.status(404).send();
   }
 });
 
-// Configure .get middleware to send the correct req.minion
+
+minionsRouter.get('/', (req, res, next) => {
+  res.send(getAllFromDatabase('minions'));
+});
+
+minionsRouter.post('/', (req, res, next) => {
+  const newMinion = addToDatabase('minions', req.body);
+  res.status(201).send(newMinion);
+});
+
 minionsRouter.get('/:minionId', (req, res, next) => {
   res.send(req.minion);
 });
 
-// Middleware to add a new minion to the DB
-minionsRouter.post('/', (req, res, next) => {
-  if ('name' in req.body && 'title' in req.body && 'salary' in req.body) {
-    if (typeof req.body.name === 'string' && typeof req.body.title === 'string' && typeof req.body.salary === 'number') {
-      const minion = addToDatabase('minions', req.body);
-      res.status(201).send(minion);
-    } else {
-      const error = new Error('Please correct the format of the attributes in the request. Only salary should be a number, and the rest should be strings.');
-      error.status = 400;
-      return next(error);
-    }
-  } else {
-    const error = new Error('Please include a request with all the attributes: name, title, and salary.');
-    error.status = 400;
-    return next(error);
-  }
-});
-
-// Middleware to update a minion
 minionsRouter.put('/:minionId', (req, res, next) => {
   let updatedMinionInstance = updateInstanceInDatabase('minions', req.body);
-  res.status(200).send(updatedMinionInstance);
+  res.send(updatedMinionInstance);
 });
 
-// Middleware to delete a minion
 minionsRouter.delete('/:minionId', (req, res, next) => {
-  const deleted = deleteFromDatabaseById('minions', req.minion.id);
+  const deleted = deleteFromDatabasebyId('minions', req.params.minionId);
   if (deleted) {
-    res.status(204).send();
+    res.status(204);
   } else {
-    const error = new Error(`Failed to delete minion with ID ${req.minion.id}`);
-    error.status = 500;
-    return next(error);
+    res.status(500);
+  }
+  res.send();
+});
+
+minionsRouter.get('/:minionId/work', (req, res, next) => {
+  const work = getAllFromDatabase('work').filter((singleWork) => {
+    return singleWork.minionId === req.params.minionId;
+  });
+  res.send(work);
+});
+
+minionsRouter.post('/:minionId/work', (req, res, next) => {
+  const workToAdd = req.body;
+  workToAdd.minionId = req.params.minionId;
+  const createdWork = addToDatabase('work', workToAdd);
+  res.status(201).send(createdWork);
+});
+
+
+
+minionsRouter.put('/:minionId/work/:workId', (req, res, next) => {
+  if (req.params.minionId !== req.body.minionId) {
+    res.status(400).send();
+  } else {
+    updatedWork = updateInstanceInDatabase('work', req.body);
+    res.send(updatedWork);
   }
 });
 
-module.exports = minionsRouter;
+minionsRouter.delete('/:minionId/work/:workId', (req, res, next) => {
+  const deleted = deleteFromDatabasebyId('work', req.params.workId);
+  if (deleted) {
+    res.status(204);
+  } else {
+    res.status(500);
+  }
+  res.send();
+});
